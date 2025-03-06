@@ -1,6 +1,7 @@
 """Answer generation module for DeepSearch."""
 
 import json
+
 from deep_research_search.utils import query_ollama
 
 def generate_answer(memory, mode):
@@ -56,7 +57,7 @@ def generate_answer(memory, mode):
 
     try:
         # Query the local OLlama server using the composed prompt.
-        response = query_ollama(prompt)
+        response = query_ollama(prompt, stream=True)
         # Assume that the response returned is a string with the final answer.
         answer = response
     except Exception as e:
