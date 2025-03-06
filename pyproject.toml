@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "deep-research-search"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+ollama = "^0.4.7"
+requests = "^2.32.3"
+duckduckgo-search = "^7.5.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

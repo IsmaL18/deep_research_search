@@ -1,0 +1,22 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Custom Python Debugger (Current File)",
+			"type": "debugpy",
+			"request": "launch", 
+			"cwd": "${workspaceFolder}",
+			"program": "${file}", 
+			"console": "integratedTerminal",
+            "justMyCode": false
+		},
+		{
+			"name": "Run DeepSearch algorithm",
+			"type": "debugpy",
+			"request": "launch", 
+			"module": "deep_research_search.main", 
+			"console": "integratedTerminal",
+            "justMyCode": false
+		}
+	]
+}
