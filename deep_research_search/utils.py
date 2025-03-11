@@ -82,9 +82,9 @@ def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, ou
         return full_response  
 
     else:
-        response = ollama.generate(**request_params)['response']
-        return response
+        response = ollama.generate(**request_params)
+        return response['response']
     
 
 if __name__ == "__main__":
-    query_ollama(prompt="How many r in strawberry ?", stream=True)
+    query_ollama(prompt="How many r in strawberry ?")

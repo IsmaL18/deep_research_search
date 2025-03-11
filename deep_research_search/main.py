@@ -28,11 +28,11 @@ def main():
         end_time = time.time()
 
         execution_time = end_time - start_time
-        logger.debug(f"Execution time: {execution_time:.6f} seconds")
+        logger.debug(f"Execution time: {execution_time:.6f} seconds\n")
 
         user_query = input("What is your query ? (type STOP to end the search engine) ")
 
-    logger.info("----- END OF THE SEARCH ENGINE -----")
+    logger.info("----- END OF THE SEARCH ENGINE -----\n")
 
 if __name__ == "__main__":
     main()

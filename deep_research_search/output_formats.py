@@ -6,3 +6,6 @@ class ReasoningOutputFormat(BaseModel):
 
 class GapQuestionsGenerationOutputFormat(BaseModel):
     gap_questions: List[str]
+
+class RewriteQueryGenerationOutputFormat(BaseModel):
+    query: str

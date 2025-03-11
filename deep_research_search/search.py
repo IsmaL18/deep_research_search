@@ -1,20 +1,23 @@
 """Web search management module for DeepSearch."""
-import re
-from urllib.parse import urlsplit, urlunsplit
+import json
 
-import requests
 from duckduckgo_search import DDGS
+from exa_py import Exa
 
-# REVOIR UTILITE DE crawl_urls ET OU L UTILISER
+from deep_research_search.logger import logger
+from deep_research_search.utils import query_ollama
+from deep_research_search.output_formats import RewriteQueryGenerationOutputFormat
+from deep_research_search.prompts import REWRITE_QUERY_PROMPT
+from deep_research_search.config import global_config
 
-
-def search_web(query, search_history):
+def ddgs_search_web(query, search_history, num_results):
     """
     Perform a web search for the given query (if not searched before) using DuckDuckGo.
     
     Args:
         query (str): The search query string.
         search_history (list): List of queries that have been searched already (to avoid duplicates).
+        num_results (int): The number of results of the web search.
     
     Returns:
         list: A list of search result entries. Each entry is a tuple (title, url, snippet).
@@ -22,27 +25,23 @@ def search_web(query, search_history):
     """
     # Check if query has already been searched to avoid duplicate searches
     if query in search_history:
-        print(f"Query '{query}' already searched. Skipping duplicate search.")
+        logger.debug(f"Query '{query}' already searched. Skipping duplicate search.\n")
         return []
     
-    # Simple query rewrite: optimize wording for web search (remove common stop words)
-    # Remove punctuation and split into words
-    query_clean = re.sub(r'[^\w\s]', ' ', query)
-    words = query_clean.lower().split()
-    # Define a basic set of stop words in English and French to remove from query
-    stop_words = {"the", "is", "of", "to", "and", "a", "an",
-                  "le", "la", "les", "de", "des", "du", "et",
-                  "que", "qui", "quoi", "où", "comment", "pourquoi",
-                  "what", "who", "where", "when", "how", "why"}
-    # Filter out stop words
-    keywords = [w for w in words if w not in stop_words]
-    rewritten_query = " ".join(keywords) if keywords else query
+    # Query rewrite to maximize the effectivenes of the web search
+    prompt = REWRITE_QUERY_PROMPT.format(question=query)
+    rewritten_query = json.loads(query_ollama(prompt=prompt, output_format=RewriteQueryGenerationOutputFormat)).get("query", "")
+    if not isinstance(rewritten_query, str) or len(rewritten_query) < 5:
+        rewritten_query = json.loads(query_ollama(prompt=prompt, output_format=RewriteQueryGenerationOutputFormat)).get("query", "")
+    else:
+         pass
+    logger.debug(f"Here is te rewritten query used for web search: {rewritten_query}\n")
     
     results = []
     
     # Search with DuckDuckGo search and get up to 10 results 
     with DDGS() as ddgs:
-        for result in ddgs.text(keywords=rewritten_query, max_results=10):
+        for result in ddgs.text(keywords=rewritten_query, max_results=num_results):
                 # Each result is a dictionary with keys like 'title', 'href', 'body'
                 title = result.get("title") or ""
                 url = result.get("href") or result.get("url") or ""
@@ -53,49 +52,43 @@ def search_web(query, search_history):
     search_history.append(query)
     return results
 
-
-#def crawl_urls(urls, memory):
+def exa_search_web(query, search_history, num_results):
     """
-    Crawl the given URLs using the Jina Reader API and store content snippets in memory.
+    Perform a web search for the given query (if not searched before) using Exa Search.
     
     Args:
-        urls (list): A list of webpage URLs to crawl for content.
-        memory (dict): A dictionary acting as memory storage for crawled content. 
-                       Already visited URLs are used as keys to avoid re-crawling.
+        query (str): The search query string.
+        search_history (list): List of queries that have been searched already (to avoid duplicates).
+        num_results (int): The number of results of the web search.
     
     Returns:
-        None: The function updates the memory dict in place with new content excerpts.
+        list: A list of search result entries. Each entry is a tuple (title, url, snippet).
+              Returns an empty list if the query was already searched.
     """
-    """count = 0  # Number of URLs crawled
-    for url in urls:
-        if count >= 3:
-            break  # limit to 3 URLs per query
-        
-        # Normalize URL (lowercase domain, remove fragment, remove trailing slash)
-        parsed = urlsplit(url)
-        norm_netloc = parsed.netloc.lower()
-        norm_path = parsed.path.rstrip('/')  # remove trailing slash from path
-        norm_parsed = parsed._replace(netloc=norm_netloc, path=norm_path, fragment="")
-        norm_url = urlunsplit(norm_parsed)
-        
-        # Skip if this URL (normalized) was already visited
-        if norm_url in memory:
-            continue
-        
-        # Use Jina Reader API to get main content of the page
-        try:
-            response = requests.get(f"https://r.jina.ai/{norm_url}", timeout=10)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            print(f"Failed to crawl {url}: {e}")
-            continue
-        
-        content_text = response.text
-        # Extract an excerpt (for example, first 500 characters) for memory storage
-        excerpt = content_text[:500]
-        memory[norm_url] = excerpt
-        count += 1"""
+    # Check if query has already been searched to avoid duplicate searches
+    if query in search_history:
+        logger.debug(f"Query '{query}' already searched. Skipping duplicate search.\n")
+        return []
+    
+    # Query rewrite to maximize the effectivenes of the web search
+    prompt = REWRITE_QUERY_PROMPT.format(question=query)
+    rewritten_query = json.loads(query_ollama(prompt=prompt, output_format=RewriteQueryGenerationOutputFormat)).get("query", "")
+    if not isinstance(rewritten_query, str) or len(rewritten_query) < 5:
+        rewritten_query = json.loads(query_ollama(prompt=prompt, output_format=RewriteQueryGenerationOutputFormat)).get("query", "")
+    else:
+         pass
+    logger.debug(f"Here is te rewritten query used for web search: {rewritten_query}\n")
+    
+    results = []
 
-
-if __name__ == "__main__":
-    search_web("Who is Lionel Messi", [])
+    # Search with ExaSearch and get up to 10 results 
+    exa = Exa(api_key = global_config.exa_search_api_key.get_secret_value()) 
+    for result in exa.search_and_contents(query, num_results = num_results, text = True).results:
+        title = result.title or ""
+        url = result.url or ""
+        snippet = result.text or ""
+        results.append((title, url, snippet))
+    
+    # Add the original query to search history to prevent future duplicates
+    search_history.append(query)
+    return results

@@ -6,6 +6,7 @@ import deep_research_search.generate_answer as generate_answer
 from deep_research_search.find_gap_questions import find_gap_questions
 
 from deep_research_search.logger import logger
+from deep_research_search.config import global_config
 
 def add_to_diary(diary_context, step, action, question, result):
     """
@@ -63,7 +64,7 @@ def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: i
     total_step = 0
 
     # Identify gap questions from the updated memory.
-    logger.debug(f"Find gap questions for the following question: {initial_query}")
+    logger.debug(f"Find gap questions for the following question: {initial_query}\n")
     new_gaps = find_gap_questions(memory=memory, question_to_answer=initial_query) 
     new_added_gaps_count = 0
     if new_gaps:
@@ -90,41 +91,47 @@ def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: i
 
             if token_usage >= token_budget * 0.9 or bad_attempts >= max_bad_attempts: # Check if we are close to the budget or have too many failures.
                 next_action = "generate_answer_immediately"
-                logger.info(f"Generation of the answer with the beast mode because of the number of generated tokens is too high ({token_usage} tokens generated).")
+                logger.info(f"Generation of the answer with the beast mode ({token_usage} tokens generated & {bad_attempts} failed attempts).\n")
                 add_to_diary(memory["diaryContext"], step, "beast_mode", initial_query,
                             "Budget threshold reached.")
                 final_answer = generate_answer.generate_answer(memory=memory, mode='beast_mode') # Generate immediately the final answer with the actual state (that's what's called beast_mode)
                 return None
             else:
                 # Decide the next action based on the current memory state.
-                logger.debug(f"Reasoning to decide the next action for the following question: {current_question}")
+                logger.debug(f"Reasoning to decide the next action for the following question: {current_question}\n")
                 next_action = reason.decide_next_action(memory)
-                logger.debug(f"Here is the chosen action: {next_action}")
+                logger.debug(f"Here is the chosen action: {next_action}\n")
 
             while next_action not in ["generate_answer", "continue_search"]: # Unrecognized action: count as a failed attempt.
-                logger.debug(f"The next action chosen by the LLM for the \"{current_question}\" is not valid.")
+                logger.debug(f"The next action chosen by the LLM for the \"{current_question}\" is not valid.\n")
                 if bad_attempts == max_bad_attempts: # Too much bad attempts so we have to aswer immediately
                     next_action = "generate_answer_immediately"
-                    logger.info(f"Generation of the answer with the beast mode after {max_bad_attempts} failed attempts.")
+                    logger.info(f"Generation of the answer with the beast mode after {max_bad_attempts} failed attempts.\n")
                     add_to_diary(memory["diaryContext"], step, "beast_mode", initial_query,
                                 "Failure threshold reached.")
                     final_answer = generate_answer.generate_answer(memory=memory, mode='beast_mode') # Generate immediately the final answer with the actual state (that's what's called beast_mode)
                     return None
                 else:
                     bad_attempts += 1
-                    logger.debug(f"Reasoning to decide the next action for the following question: {current_question}")
+                    logger.debug(f"Reasoning to decide the next action for the following question: {current_question}\n")
                     add_to_diary(memory["diaryContext"], step, "error", current_question,
                                 "Unknown action encountered.")
                     next_action = reason.decide_next_action(memory)
-                    logger.debug(f"Here is the chosen action: {next_action}")
+                    logger.debug(f"Here is the chosen action: {next_action}\n")
 
             if next_action == "generate_answer": # The actual gap question doesn't need any additional informations to be answered so we can focus onto the next one.
                 pass
 
             elif next_action == "continue_search": # The actual gap question need more additional informations to be answered so we use internet search.
                 # Perform the search action.
-                logger.debug(f"Searching additional informations for the following question: {current_question}")
-                results = search.search_web(current_question, search_history=memory['processed_queries'])
+                logger.debug(f"Searching additional informations for the following question: {current_question}\n")
+
+                if global_config.web_search_engine == "ddg": # Use DuckDuckGo engine for web search
+                    results = search.ddgs_search_web(current_question, search_history=memory['processed_queries'], num_results=3)
+                elif global_config.web_search_engine == "exa":
+                    results = search.exa_search_web(current_question, search_history=memory['processed_queries'], num_results=3)
+                else:
+                    logger.error(f"WEB_SEARCH_ENGINE value is not valid: {global_config.web_search_engine}")
                 token_usage += 100  # Simulate token usage for the search step.
                 add_to_diary(memory["diaryContext"], step, "search", current_question,
                             f"Retrieved {len(results)} results.")
@@ -136,7 +143,7 @@ def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: i
             else:
                 pass
                 
-        logger.info(f"Generation of the answer after having used {token_usage} tokens and failed {bad_attempts} times during the search and reasonning processus.")
+        logger.info(f"Generation of the answer after having used {token_usage} tokens and failed {bad_attempts} times during the search and reasonning processus.\n")
         final_answer = generate_answer.generate_answer(memory=memory, mode='normal_generation')
 
         return None
