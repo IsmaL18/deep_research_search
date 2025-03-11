@@ -1,8 +1,10 @@
 """Module use to find the gap questions that will lead to the search of the gap knowledge required to answer a specific question."""
 import json
 
+from deep_research_search.logger import logger
 from deep_research_search.utils import query_ollama
 from deep_research_search.output_formats import GapQuestionsGenerationOutputFormat
+from deep_research_search.prompts import GENERATING_GAP_QUESTIONS_PROMPT
 
 def find_gap_questions(memory, question_to_answer):
     """
@@ -23,18 +25,11 @@ def find_gap_questions(memory, question_to_answer):
         any missing information and formulate follow-up (gap) questions.
     """
     # Aggregate all collected knowledge text.
-    aggregated_text = " ".join([item["text"] for item in memory.get("knowledge", [])])
+    #aggregated_text = " ".join([item["text"] for item in memory.get("knowledge", [])])
     
     # Build the prompt for the LLM.
-    prompt = (
-        f"You are an AI assistant specialized in identifying missing information gaps to answer a specific question.\n"
-        f"The initial question is: \"{question_to_answer}\"\n"
-        f"The following knowledge has been collected so far:\n{aggregated_text}\n\n"
-        "Based on this information, list 3 follow-up questions (gap questions) that need to be answered to fill in the missing details."
-        "These questions will be used as web search requests to find some web pages that contains interesting informations so keep this in mind to generate efficient questions." 
-        "Respond with a JSON that include a \"gap_questions\" key. The value of this key need to be a list of strings where the strings are the different questiosn generated."
-        "Generate only the JSON in your final answer and nothing else."
-    )
+    #prompt = GENERATING_GAP_QUESTIONS_PROMPT.format(question_to_answer=question_to_answer, aggregated_text= aggregated_text)
+    prompt = GENERATING_GAP_QUESTIONS_PROMPT.format(question_to_answer=question_to_answer)
     
     # Query the LLM using OLlama.
     try:
@@ -47,5 +42,6 @@ def find_gap_questions(memory, question_to_answer):
     except Exception as e:
         print(f"Error querying gap questions: {e}")
         gap_questions = []
-
+    
+    logger.debug(f"Here are the generated gap question: {gap_questions}\n")
     return gap_questions

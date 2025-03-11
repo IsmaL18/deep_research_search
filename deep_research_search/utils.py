@@ -1,12 +1,16 @@
 """Module used to query a LLM with OLlama or others solutions."""
-from typing import Dict
+from typing import Dict, Generator
 import re
+import sys
 import json
 from pydantic import BaseModel
 
 import ollama
 
-def query_ollama(prompt: str, model_name: str = "deepseek-r1:14b", output_format: BaseModel=None) -> Dict:
+from deep_research_search.logger import logger
+from deep_research_search.config import global_config
+
+def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, output_format: BaseModel=None, stream: bool=False) -> Dict:
 
     """
     Sends the prompt to the local OLlama server and retrieves the LLM's decision.
@@ -25,57 +29,62 @@ def query_ollama(prompt: str, model_name: str = "deepseek-r1:14b", output_format
     """
     # Use OLlama's model to generate a response
     if output_format is None:
-        response = ollama.generate(model=model_name, prompt=prompt)['response']
+        response = ollama.generate(model=model_name, prompt=prompt, stream=stream)['response']
     else:
-        response = ollama.generate(model=model_name, prompt=prompt, format=output_format.model_json_schema(),)['response']
+        response = ollama.generate(model=model_name, prompt=prompt, format=output_format.model_json_schema(), stream=stream)['response']
     return response
 
 
-#def extract_json_from_text(text: str) -> Dict:
+def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, output_format: BaseModel = None, stream: bool = False) -> Dict:
     """
-    Extract a json object from a string.
+    Sends the prompt to the local OLlama server and retrieves the LLM's decision.
 
     Args:
-        text (str): The prompt to be sent to the LLM.
-        llama_server_url (str): The URL of the local OLlama server endpoint for generation.
+        prompt (str): The prompt to be sent to the LLM.
+        model_name (str): The name of the OLlama model to use.
+        output_format (BaseModel, optional): The required format of the output.
+        stream (bool, optional): If True, enables streaming output.
 
     Returns:
-        dict: A dictionary representing the LLM's response in JSON format, e.g.:
-              {"action": "continue_search", "query": "additional question"} or {"action": "generate_answer"}.
+        dict: A dictionary representing the LLM's response in required JSON format (if not streaming).
+              If streaming, the response is logged token by token in real time.
+
+    Role:
+        This function interfaces with the OLlama server. It sends the prompt, receives the LLM output, 
+        and either returns it as JSON or streams it in real time.
     """
-    # Remove the content between <think> and </think> and the '/n'
-    #new_text = re.sub(r'<think>.*?</think>', '', text.replace('\n', ''), flags=re.DOTALL)
+    
+    request_params = {
+        "model": model_name,
+        "prompt": prompt,
+        "stream": stream
+    }
+    
+    if output_format is not None:
+        request_params["format"] = output_format.model_json_schema()
 
-    # Extract the JSON object between { and }
-    #match = re.search(r'(\{.*?\})', new_text, re.DOTALL)
+    # Gestion du streaming
+    if stream:
+        response_generator: Generator = ollama.generate(**request_params)
+        
+        logger.info("Generation of the response\n")
 
-    #if match:
-        #json_str = match.group(1)  
-        #try:
-            #return json.loads(json_str)  # Convertir en dict Python
-        #except json.JSONDecodeError as e:
-            #raise TypeError("Error during the parsing of the JSON in the LLM response :", e)
-            #return None 
-    #else:
-        #return None  
+        full_response = ""
+        sys.stdout.flush()
+        for chunk in response_generator:
+            token = chunk.get("response", "")
+            sys.stdout.write(token)  
+            sys.stdout.flush()  
+            full_response += token
+        sys.stdout.flush()
+        
+        logger.info("Generation done ✅\n")
+        return full_response  
+
+    else:
+        response = ollama.generate(**request_params)
+        return response['response']
     
 
 if __name__ == "__main__":
-    from pydantic import BaseModel
-
-    class Pet(BaseModel):
-        name: str
-        animal: str
-        age: int
-        color: str | None
-        favorite_toy: str | None
-    
-    class PetList(BaseModel):
-        pets: list[Pet]
-
-    response = ollama.generate(
-        prompt="I have one pet. A cat named Luna who is 5 years old and loves playing with yarn. She has grey fur.",
-        model='deepseek-r1:1.5b',
-        format=PetList.model_json_schema(),
-    )
-    print(response.response)
+    query_ollama(prompt="How many r in strawberry ?")

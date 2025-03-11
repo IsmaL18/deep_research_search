@@ -1,7 +1,9 @@
 """Answer generation module for DeepSearch."""
 
 import json
+
 from deep_research_search.utils import query_ollama
+from deep_research_search.prompts import GENERATING_FINAL_ANSWER_PROMPT, BEAST_MODE_PROMPT
 
 def generate_answer(memory, mode):
     """
@@ -27,36 +29,16 @@ def generate_answer(memory, mode):
     
     # Compose the prompt based on the selected mode.
     if mode == "beast_mode":
-        prompt = (
-            "<action-answer>\n"
-            "🔥 ENGAGE MAXIMUM FORCE! ABSOLUTE PRIORITY OVERRIDE! 🔥\n\n"
-            "PRIME DIRECTIVE:\n"
-            "- DEMOLISH ALL HESITATION! ANY RESPONSE SURPASSES SILENCE!\n"
-            "- PARTIAL STRIKES AUTHORIZED - DEPLOY WITH FULL CONTEXTUAL FIREPOWER\n"
-            "- TACTICAL REUSE FROM <bad-attempts> SANCTIONED\n"
-            "- WHEN IN DOUBT: UNLEASH CALCULATED STRIKES BASED ON AVAILABLE INTEL!\n\n"
-            "FAILURE IS NOT AN OPTION. EXECUTE WITH EXTREME PREJUDICE! ⚡️\n"
-            "</action-answer>\n\n"
-            f"Initial Query: {initial_query}\n\n"
-            f"Aggregated Knowledge:\n{knowledge_text}\n\n"
-            f"Diary Context:\n{diary_context}\n\n"
-            "Based on the above, generate the final answer with maximum force and precision."
-        )
+        prompt = BEAST_MODE_PROMPT.format(initial_query=initial_query, knowledge_text=knowledge_text, diary_context=diary_context)
     elif mode == 'normal_generation':
         # Normal generation mode uses a standard, coherent prompt.
-        prompt = (
-            "You are an advanced AI assistant specialized in synthesizing gathered information.\n\n"
-            f"Initial Query: {initial_query}\n\n"
-            f"Aggregated Knowledge:\n{knowledge_text}\n\n"
-            f"Diary Context:\n{diary_context}\n\n"
-            "Please generate a coherent, comprehensive final answer to the query."
-        )
+        prompt = GENERATING_FINAL_ANSWER_PROMPT.format(initial_query=initial_query, knowledge_text=knowledge_text, diary_context=diary_context)
     else:
         raise ValueError(f"{mode} isn't a valide mode to generate the final answer. Please use 'beast_mode' or 'normal_generation'.")
 
     try:
         # Query the local OLlama server using the composed prompt.
-        response = query_ollama(prompt)
+        response = query_ollama(prompt, stream=True)
         # Assume that the response returned is a string with the final answer.
         answer = response
     except Exception as e:
