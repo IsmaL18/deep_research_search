@@ -4,29 +4,11 @@ import deep_research_search.read as read
 import deep_research_search.reason as reason
 import deep_research_search.generate_answer as generate_answer
 from deep_research_search.find_gap_questions import find_gap_questions
+from deep_research_search.utils import add_to_diary
 
 from deep_research_search.logger import logger
 from deep_research_search.config import global_config
 
-def add_to_diary(diary_context, step, action, question, result):
-    """
-    Adds an entry to the diary context.
-
-    Args:
-        diary_context (list): The current diary context list.
-        step (int): The current step number.
-        action (str): The action taken at this step.
-        question (str): The question associated with the action.
-        result (str): Details of what was done and the obtained results.
-
-    Returns:
-        None: The diary context is updated in place.
-    """
-    entry = (
-        f"At step {step}, you took **{action}** action for question: \"{question}\"\n"
-        f"Details: {result}\n"
-    )
-    diary_context.append(entry)
 
 def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: int=3, max_gap_questions: int=3):
     """

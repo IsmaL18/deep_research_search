@@ -10,31 +10,6 @@ import ollama
 from deep_research_search.logger import logger
 from deep_research_search.config import global_config
 
-def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, output_format: BaseModel=None, stream: bool=False) -> Dict:
-
-    """
-    Sends the prompt to the local OLlama server and retrieves the LLM's decision.
-
-    Args:
-        prompt (str): The prompt to be sent to the LLM.
-        llama_server_url (str): The URL of the local OLlama server endpoint for generation.
-        output_format (BaseModel): The required format of the output.
-
-    Returns:
-        dict: A dictionary representing the LLM's response in required JSON format.
-
-    Role:
-        This function is responsible for interfacing with the OLlama server. It sends the generated prompt,
-        receives the LLM output, and returns the output as a JSON-like dictionary.
-    """
-    # Use OLlama's model to generate a response
-    if output_format is None:
-        response = ollama.generate(model=model_name, prompt=prompt, stream=stream)['response']
-    else:
-        response = ollama.generate(model=model_name, prompt=prompt, format=output_format.model_json_schema(), stream=stream)['response']
-    return response
-
-
 def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, output_format: BaseModel = None, stream: bool = False) -> Dict:
     """
     Sends the prompt to the local OLlama server and retrieves the LLM's decision.
@@ -85,6 +60,22 @@ def query_ollama(prompt: str, model_name: str = global_config.llm_model_name, ou
         response = ollama.generate(**request_params)
         return response['response']
     
+def add_to_diary(diary_context, step, action, question, result):
+    """
+    Adds an entry to the diary context.
 
-if __name__ == "__main__":
-    query_ollama(prompt="How many r in strawberry ?")
+    Args:
+        diary_context (list): The current diary context list.
+        step (int): The current step number.
+        action (str): The action taken at this step.
+        question (str): The question associated with the action.
+        result (str): Details of what was done and the obtained results.
+
+    Returns:
+        None: The diary context is updated in place.
+    """
+    entry = (
+        f"At step {step}, you took **{action}** action for question: \"{question}\"\n"
+        f"Details: {result}\n"
+    )
+    diary_context.append(entry)
