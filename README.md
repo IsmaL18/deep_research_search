@@ -43,6 +43,34 @@ Ensure you have [Poetry](https://python-poetry.org/) installed on your machine.
 - **deep_research_search/find_gap_questions.py**: Generates gap questions used by the Deep Search algorithm.
 - **deep_research_search/output_formats.py**: Defines output formats for LLM responses.
 
+## DeepSearch Algorithm Logic Overview
+The DeepSearch algorithm is designed to iteratively explore and reason about a user's query using a combination of web searches, information processing, and reasoning through a large language model (LLM).
+
+### Steps:
+#### 1. Initialization:
+- Sets up memory to track knowledge, processed queries, visited URLs, and a diary of actions.
+- Defines an initial query and identifies initial gap questions that represent information needing further investigation.
+
+#### 2. Main Loop:
+- Executes repeatedly until a defined token budget or error threshold is reached.
+- For each gap question:
+  - Reasoning: The LLM evaluates if enough information has been gathered yet to answer the question or if additional searching is required.
+  - Decision:
+    - If information is sufficient (generate_answer), the algorithm proceeds to answer generationn or pass to the next gap question if there is still one.
+    - If more information is needed (continue_search), it initiates a web search.
+
+#### 3. Web Search & Reading:
+- Performs web searches via DuckDuckGo or ExaSearch to gather relevant information.
+- Processes and incorporates the search results into memory.
+
+#### 4. Gap Question Management:
+Continuously identifies and queues new gap questions based on gathered knowledge, up to a predefined limit.
+
+#### 5. Termination & Answer Generation:
+- If the token usage approaches the allocated budget or too many failed reasoning attempts occur, the algorithm enters "BEAST MODE," immediately generating the best possible answer with existing information.
+- Otherwise, once sufficient data has been collected, it generates an answer in normal mode.
+
+
 ## Environment Variables
 Create a .env file based on .env.example:
 ```

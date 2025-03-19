@@ -20,17 +20,17 @@ def main():
     """
     logger.info("----- START OF THE SEARCH ENGINE -----\n")
 
-    user_query = input("What is your query ? (type STOP to end the search engine) ")
+    user_query = None
 
     while user_query != "STOP":
+        user_query = input("What is your query ? (type STOP to end the search engine) ")
+        
         start_time = time.time()
         deep_search(user_query)
         end_time = time.time()
 
         execution_time = end_time - start_time
         logger.debug(f"Execution time: {execution_time:.6f} seconds\n")
-
-        user_query = input("What is your query ? (type STOP to end the search engine) ")
 
     logger.info("----- END OF THE SEARCH ENGINE -----\n")
 
