@@ -8,7 +8,7 @@ Before starting, ensure you have:
 ### Ollama Setup
 
 #### Install Ollama:
-Visit Ollama for installation instructions.
+Visit [Ollama](https://ollama.com/) for installation instructions.
 
 #### Pull LLM Model:
 Example:
@@ -19,10 +19,16 @@ Example:
 
 ### Web Search API
 This project supports two web search APIs:
-- DuckDuckGo (default) - No API key required.
-- ExaSearch - Requires an API key.
+- [DuckDuckGo](https://duckduckgo.com/) (default) - No API key required but have some rate limits.
+- [ExaSearch](https://exa.ai/search) - Requires an API key that you can create [here](https://dashboard.exa.ai/api-keys).
 
 Configure your choice in the .env file (see .env.example).
+
+### Python
+Ensure you have Python installed on your machine.
+
+### Poetry
+Ensure you have [Poetry](https://python-poetry.org/) installed on your machine.
 
 ## Project Structure
 
