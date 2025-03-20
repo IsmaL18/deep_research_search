@@ -10,7 +10,7 @@ from deep_research_search.logger import logger
 from deep_research_search.config import global_config
 
 
-def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: int=3, max_gap_questions: int=3):
+def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: int=3):
     """
     Executes the DeepSearch algorithm loop.
 
@@ -51,7 +51,7 @@ def deep_search(initial_query: str, token_budget: int=10000, max_bad_attempts: i
     new_added_gaps_count = 0
     if new_gaps:
         for new_gap in new_gaps:
-            if gap_questions_count < max_gap_questions:
+            if gap_questions_count < 3: # 3 gap questions maximum
                 gaps.append(new_gap)
                 gap_questions_count += 1
                 new_added_gaps_count += 1
